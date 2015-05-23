@@ -14,7 +14,7 @@ class Grid
       separator,
       row(cells[3..5]),
       separator,
-      row(cells[6..8])
+      row(cells[6..8]),
     ]
     lines.join("\n")
   end
