@@ -25,13 +25,13 @@ class Hangman
 
   def left_arm
     left_arm = body
-    left_arm[3] = " \\|   |"
+    left_arm[3] = " /|   |"
     left_arm
   end
 
   def right_arm
     right_arm = left_arm
-    right_arm[3] = " \\|/  |"
+    right_arm[3] = " /|\\  |"
     right_arm
   end
 
@@ -62,14 +62,22 @@ class Word
 end
 
 class Game
-  attr_reader :choosen_word
+  attr_reader :guesses, :try, :leave
   def initialize
     @choosen_word = Word.new.choose_word.split(//)
+    @guesses = []
+    @false_guesses = []
+    @try = 0
+    @leave = false
+  end
+
+  def hangman 
+    hangman = Hangman.new
   end
 
   def word(guesses)
     word = @choosen_word.map do |letter|
-      unless guesses.any? { |guess| guess == letter } 
+      unless @guesses.any? { |guess| guess == letter } 
         letter = "_"
       else 
         letter
@@ -77,41 +85,87 @@ class Game
     end
     word.join(" ")
   end
-end
 
-game = Game.new
-guesses = []
-false_guesses = []
+  def winner?
+    !word(@guesses).include?("_") 
+  end
 
-hangman = Hangman.new
-puts hangman.gallows
-puts "Word: #{game.word(guesses)}"
-try = 0
+  def lost?
+    @try == 6
+  end
 
-until !game.word(guesses).include?("_") || try == 6
-  print "Guess a letter: "
+  def start_output
+    system "clear"
+    puts "Welcome to HANGMAN. Created by Piri."
+    puts "Do you want to open a saved game? (y/n)"
+    open = gets.chomp
+    if open == "y"
+      open_game 
+    end
+    puts hangman.hanged[@try]
+    puts "Word: #{word(@guesses)}"
+    puts "False Guesses: #{@false_guesses.join(" ") unless @false_guesses.empty?}"
+  end
 
-  guess = gets.chomp
-  guesses << guess.upcase
-  if game.word(guesses).include?(guess.upcase)
-    puts hangman.hanged[try]
-    puts "Word: #{game.word(guesses)}"
-    puts "False Guesses: #{false_guesses.join(" ") unless false_guesses.empty?}"
-  else
-    try += 1
-    puts hangman.hanged[try]
-    puts "Word: #{game.word(guesses)}"
-    false_guesses << guess
-    puts "False Guesses: #{false_guesses.join(" ")}"
+  def open_game
+    puts "Opening old game."
+    saved = File.read("saved.txt").split("\n")
+  
+    @choosen_word = saved[0].split("")
+    @guesses = saved[1].split("")
+    @false_guesses = saved[2].split("")
+    @try = saved.last.to_i
+  end
+
+  def play
+    print "Guess a letter (or save game by entering 'save'): "
+
+    guess = gets.chomp
+    if guess == 'save'
+      save_game
+      @leave = true
+    else
+      @guesses << guess.upcase
+      if word(@guesses).include?(guess.upcase)
+        puts hangman.hanged[@try]
+        puts "Word: #{word(@guesses)}"
+        puts "False Guesses: #{@false_guesses.join(" ") unless @false_guesses.empty?}"
+      else
+        @try += 1
+        puts hangman.hanged[@try]
+        puts "Word: #{word(@guesses)}"
+        @false_guesses << guess
+        puts "False Guesses: #{@false_guesses.join(" ")}"
+      end
+    end
+  end
+
+  def save_game
+    File.open('saved.txt', 'w') do |f|
+      f.puts "#{@choosen_word.join('')}\n#{@guesses.join('')}\n#{@false_guesses.join('')}\n#{@try}"
+    end
+  end
+
+  def final_output
+    if winner?
+      "You won. Congratulations."
+    elsif lost?
+      "Oh no. You lost.\nThe word was #{@choosen_word.join(" ")}."
+    else
+      "Game saved. See you soon. Bye bye."
+    end
   end
 end
 
-if !game.word(guesses).include?("_")
-  puts "You won. Congratulations."
-else
-  puts "Oh no. You lost."
-  puts "The word was #{game.choosen_word.join(" ")}."
+game = Game.new
+
+game.start_output
+
+until game.winner? || game.lost? || game.leave
+  game.play
 end
+
+puts game.final_output
 
 
 
