@@ -28,7 +28,3 @@ class CaesarsCipher
     encrypt(rotate, string)
   end
 end
-
-c = CaesarsCipher.new
-p c.encrypt(5, "What a string!")
-p c.decrypt(5, "Bmfy f xywnsl!")
